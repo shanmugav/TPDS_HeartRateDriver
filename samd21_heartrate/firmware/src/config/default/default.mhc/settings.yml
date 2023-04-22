@@ -1,0 +1,14 @@
+format_version: v1.0
+configName: default
+folderName: heartrate
+frameworkPath: D:\Harmony
+processor: ATSAMD21E18A
+projectName: heartrate
+settings:
+  PackageFilter: ''
+  FORCE_OPTIMIZATION: 'false'
+  GENERATE_BACKUP: 'true'
+  TRUSTZONE: 'false'
+  CMSISPath: dev_packs\arm\CMSIS\5.8.0
+  MERGE_STRATEGY: USER_ALL
+  DFPPath: dev_packs\Microchip\SAMD21_DFP\3.4.116\samd21a\atdf\ATSAMD21E18A.atdf
