@@ -164,7 +164,7 @@ SYS_MODULE_OBJ DRV_HEARTRATE_Initialize( const SYS_MODULE_INDEX drvIndex, const 
 
     dObj->heartratePlib->setReadThreshold(10); 
     dObj->heartratePlib->readNotificationEnable(true,false);
-    dObj->heartratePlib->readCallbackRegister(_DRV_HEARTRATE_PLIB_CallbackHandler, (uintptr_t)dObj);
+    dObj->heartratePlib->readCallbackRegister((DRV_HEARTRATE_PLIB_READ_CALLBACK_REG)_DRV_HEARTRATE_PLIB_CallbackHandler, (uintptr_t)dObj);
     dObj->heartratePlib->read(dObj->rx_buff,DRV_RECEIVE_HEARTRATE_DATA_SIZE);
    
     /* Update the status */
@@ -329,6 +329,7 @@ void DRV_HEARTRATE_TASKS( SYS_MODULE_OBJ object)
     int drvIndex = (int)object;
     
      DRV_HEARTRATE_OBJ *dObj = NULL;
+     DRV_HEARTRATE_CLIENT_OBJ *clientObj=NULL;
     /* Allocate the driver object */
      int heartrate_data=-1;
     //wait for 5 seconds 
@@ -340,26 +341,32 @@ void DRV_HEARTRATE_TASKS( SYS_MODULE_OBJ object)
         if(!iInitializeDelay)   bInitialized=true;
         return;
     }
-    
+  
     // perform a read and provide callback
     if(DRV_HEARTRATE_Status(object)  == SYS_STATUS_READY)
     {
-       dObj                        = &gDrvHEARTRATEObj[drvIndex];
+       dObj= &gDrvHEARTRATEObj[drvIndex];
        
-        if(true == is_heartrate9_byte_ready(dObj))
+      
+        for(int iClient = 0; iClient != dObj->nClientsMax; iClient++)
         {
-            heartrate_data      = heartrate9_read_byte(dObj);
-            if(heartrate_data !=-1)
+            if(true == ((DRV_HEARTRATE_CLIENT_OBJ *)dObj->clientObjPool)[iClient].inUse)
             {
-                dObj->heartRate = heartrate_data;
-                 SYS_CONSOLE_PRINT("DRV Heartrate = %d bpm \t\r\n", (uint8_t)heartrate_data);
-                //if(gDrvHEARTRATEObj[drvIndex]->currentClient)
-                 //   ;
-               //code for callback and cloud to be added.
+                /* This means we have a free client object to use */
+
+                clientObj = &((DRV_HEARTRATE_CLIENT_OBJ *)dObj->clientObjPool)[iClient];
+
+                if(clientObj->clientHandle && clientObj->callback)
+                {
+                        heartrate_data = DRV_HEARTRATE_Read(clientObj->clientHandle);
+                        if(heartrate_data > 0)
+                            (clientObj->callback)(clientObj->clientHandle, dObj->heartRate);
+                   //code for callback and cloud to be added.
+                }
             }
         }
-
     }
+
 }
 
 
@@ -374,18 +381,16 @@ bool DRV_HEARTRATE_GetHeartrate( const DRV_HANDLE handle, int * heartRate)
     if(clientObj != NULL)
     {
         dObj = clientObj->hDriver;
-        if(dObj->heartRate < 0) return false;
+        if(dObj->heartRate <= 0) return false;
         *heartRate = dObj->heartRate;
     }
      return true;
 }
 
 /* trigger an asynchronous read of the BME280, once complete the registered callback will be called and the Get functions can then be used to access the data */
-bool DRV_HEARTRATE_Read(DRV_HANDLE handle)
+int DRV_HEARTRATE_Read(DRV_HANDLE handle)
 {
     DRV_HEARTRATE_CLIENT_OBJ* clientObj = (DRV_HEARTRATE_CLIENT_OBJ *)NULL;
-    DRV_HEARTRATE_OBJ* dObj = NULL;
-    bool isSuccess = false;
     int heartrate_data=-1;
     /* Validate the driver handle */
     clientObj = _DRV_HEARTRATE_DriverHandleValidate(handle);
@@ -398,24 +403,26 @@ bool DRV_HEARTRATE_Read(DRV_HANDLE handle)
             heartrate_data      = heartrate9_read_byte(clientObj->hDriver);
             if(heartrate_data !=-1)
             {
-                 SYS_CONSOLE_PRINT("DRV Heartrate = %d bpm \t\r\n", (uint8_t)heartrate_data);
-                 isSuccess=true;
+                 
+                 clientObj->hDriver->heartRate = heartrate_data;
+                 SYS_CONSOLE_Print(SYS_CONSOLE_INDEX_0, "DRV new heartrate %d \r\n", heartrate_data);
+                 return heartrate_data;
             }
         }
     
-    return isSuccess;
+    return heartrate_data;
 }
 
 
 /* register a client callback handler to be notified when the read command has returned with new data */
-void DRV_HEARTRATE_ClientEventHandlerSet(const DRV_HANDLE handle, const DRV_HEARTRATE_APP_CALLBACK callback, const uintptr_t context)
+void DRV_HEARTRATE_ClientEventHandlerSet(const DRV_HANDLE handle, const DRV_HEARTRATE_APP_CALLBACK callback)
 {
     DRV_HEARTRATE_CLIENT_OBJ* clientObj = (DRV_HEARTRATE_CLIENT_OBJ *)NULL;
 
     /* Validate the driver handle */
     clientObj = _DRV_HEARTRATE_DriverHandleValidate(handle);
     
-    
+    clientObj->callback = callback;
    
     return ;
 }

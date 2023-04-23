@@ -89,11 +89,11 @@ typedef enum
     HEARTRATE_EVENT_BREAK_SIGNAL_DETECTED,
 }HEARTRATE_EVENT;
 
-typedef void (* DRV_HEARTRATE_PLIB_CALLBACK)( uintptr_t context);
-typedef bool(*DRV_HEARTRATE_PLIB_READ)(void *buffer, const size_t size);
+typedef size_t(*DRV_HEARTRATE_PLIB_READ)(uint8_t *buffer, const size_t size);
 typedef size_t(*DRV_HEARTRATE_PLIB_READ_COUNT_GET)(void);
 typedef void (* DRV_HEARTRATE_PLIB_READ_CALLBACK_REG)( int event, uintptr_t context);
-typedef bool(*DRV_HEARTRATE_PLIB_SET_READ_THRESHOLD_SET)(uint32_t nBytesThreshold);
+typedef void (* DRV_HEARTRATE_PLIB_SET_READ_CALLBACK_REG)( DRV_HEARTRATE_PLIB_READ_CALLBACK_REG callback, uintptr_t context);
+typedef void(*DRV_HEARTRATE_PLIB_SET_READ_THRESHOLD_SET)(uint32_t nBytesThreshold);
 typedef bool(*DRV_HEARTRATE_PLIB_READ_NOTIFICATION_ENABLE)(bool isEnabled, bool isPersistent);
 
     
@@ -102,7 +102,7 @@ typedef struct
 {
     DRV_HEARTRATE_PLIB_READ read;
     DRV_HEARTRATE_PLIB_READ_COUNT_GET readCountGet;
-    DRV_HEARTRATE_PLIB_READ_CALLBACK_REG readCallbackRegister;
+    DRV_HEARTRATE_PLIB_SET_READ_CALLBACK_REG readCallbackRegister;
     DRV_HEARTRATE_PLIB_SET_READ_THRESHOLD_SET setReadThreshold;
     DRV_HEARTRATE_PLIB_READ_NOTIFICATION_ENABLE readNotificationEnable;
 } DRV_HEARTRATE_PLIB_INTERFACE;

@@ -12,7 +12,7 @@
 
   Description:
     The HEARTRATE device driver provides a simple interface to manage the HEARTRATE or
-    UART modules on Microchip PIC32 microcontrollers.  This file provides the
+    on Microchip microcontrollers.  This file provides the
     interface definition for the HEARTRATE driver.
 *******************************************************************************/
 
@@ -69,113 +69,8 @@
 // *****************************************************************************
 // *****************************************************************************
 
-// *****************************************************************************
-/* HEARTRATE Driver Buffer Handle
-
-  Summary:
-    Handle identifying a read or write buffer passed to the driver.
-
-  Description:
 
 
-  Remarks:
-    None
-*/
-
-typedef uintptr_t DRV_HEARTRATE_BUFFER_HANDLE;
-
-// *****************************************************************************
-/* HEARTRATE Driver Invalid Buffer Handle
-
-  Summary:
-    Definition of an invalid buffer handle.
-
-  Description:
-    This is the definition of an invalid buffer handle. An invalid buffer handle
-    is returned by DRV_HEARTRATE_ReadBufferAdd and DRV_HEARTRATE_WriteBufferAdd
-    functions if the buffer add request was not successful.
-
-  Remarks:
-    None
-*/
-
-#define DRV_HEARTRATE_BUFFER_HANDLE_INVALID  ((DRV_HEARTRATE_BUFFER_HANDLE)(-1))
-
-// *****************************************************************************
-/* HEARTRATE Driver Buffer Events
-
-   Summary
-    Identifies the possible events that can result from a buffer add request.
-
-   Description
-    This enumeration identifies the possible events that can result from a
-    buffer add request caused by the client calling either the
-    DRV_HEARTRATE_ReadBufferAdd or DRV_HEARTRATE_WriteBufferAdd functions.
-
-   Remarks:
-    One of these values is passed in the "event" parameter of the event
-    handling callback function that the client registered with the driver by
-    calling the DRV_HEARTRATE_BufferEventHandlerSet function when a buffer
-    transfer request is completed.
-
-*/
-
-typedef enum
-{
-    /* The buffer is pending to be serviced */
-    DRV_HEARTRATE_BUFFER_EVENT_PENDING = 0,
-
-    /* All data from or to the buffer was transferred successfully. */
-    DRV_HEARTRATE_BUFFER_EVENT_COMPLETE = 1,
-
-    /* Transfer Handle given is expired. It means transfer
-    is completed but with or without error is not known. */
-    DRV_HEARTRATE_BUFFER_EVENT_HANDLE_EXPIRED = 2,
-
-    /* There was an error while processing the buffer transfer request. */
-    DRV_HEARTRATE_BUFFER_EVENT_ERROR = -1,
-
-    /* Transfer Handle given is invalid */
-    DRV_HEARTRATE_BUFFER_EVENT_HANDLE_INVALID = -2
-
-} DRV_HEARTRATE_BUFFER_EVENT;
-
-// *****************************************************************************
-/* HEARTRATE Driver Errors
-
-  Summary:
-    Defines the different types of errors for HEARTRATE driver
-
-  Description:
-    This data type defines the different types of errors for HEARTRATE driver.
-    DRV_HEARTRATE_ERROR_NONE : No errors
-    DRV_HEARTRATE_ERROR_OVERRUN : Receive Overflow error
-    DRV_HEARTRATE_ERROR_PARITY : Parity error
-    DRV_HEARTRATE_ERROR_FRAMING : Framing error
-
-  Remarks:
-    This structure is implementation specific. It is fully defined in
-    drv_heartrate_definitions.h.
-*/
-
-typedef enum _DRV_HEARTRATE_ERROR DRV_HEARTRATE_ERROR;
-
-// *****************************************************************************
-/* HEARTRATE Driver Serial Setup Data
-
-  Summary:
-    Defines the data required to dynamically set the serial settings.
-
-  Description:
-    This data type defines the data required to dynamically set the serial
-    settings for the specific HEARTRATE driver instance.
-
-  Remarks:
-    This structure is implementation specific. It is fully defined in
-    drv_heartrate_definitions.h.
-*/
-
-typedef struct _DRV_HEARTRATE_SERIAL_SETUP DRV_HEARTRATE_SERIAL_SETUP;
 
 // *****************************************************************************
 /* HEARTRATE Driver Initialization Data
@@ -194,100 +89,7 @@ typedef struct _DRV_HEARTRATE_SERIAL_SETUP DRV_HEARTRATE_SERIAL_SETUP;
 
 typedef struct _DRV_HEARTRATE_INIT DRV_HEARTRATE_INIT;
 
-// *****************************************************************************
-/* HEARTRATE Driver Buffer Event Handler Function Pointer
-
-   Summary
-    Pointer to a HEARTRATE Driver Buffer Event handler function
-
-   Description
-    This data type defines the required function signature for the HEARTRATE driver
-    buffer event handling callback function. A client must register a pointer
-    using the buffer event handling function whose function signature (parameter
-    and return value types) match the types specified by this function pointer
-    in order to receive buffer related event calls back from the driver.
-
-    The parameters and return values are described here and
-    a partial example implementation is provided.
-
-  Parameters:
-    event - Identifies the type of event
-
-    bufferHandle - Handle identifying the buffer to which the vent relates
-
-    context - Value identifying the context of the application that
-    registered the event handling function.
-
-  Returns:
-    None.
-
-  Example:
-    <code>
-    void APP_HEARTRATEBufferEventHandler(
-        DRV_HEARTRATE_BUFFER_EVENT event,
-        DRV_HEARTRATE_BUFFER_HANDLE handle,
-        uintptr_t context
-    )
-    {
-        // The context handle was set to an application specific
-        // object. It is now retrievable easily in the event handler.
-        MY_APP_OBJ* myAppObj = (MY_APP_OBJ *) context;
-
-        switch(event)
-        {
-            case DRV_HEARTRATE_BUFFER_EVENT_COMPLETE:
-            {
-                // This means the data was transferred.
-                break;
-            }
-
-            case DRV_HEARTRATE_BUFFER_EVENT_ERROR:
-            {
-                // Error handling here.
-                break;
-            }
-
-            default:
-            {
-                break;
-            }
-        }
-    }
-    </code>
-
-  Remarks:
-    If the event is DRV_HEARTRATE_BUFFER_EVENT_COMPLETE, it means that the data was
-    transferred successfully.
-
-    If the event is DRV_HEARTRATE_BUFFER_EVENT_ERROR, it means that the data was not
-    transferred successfully. The DRV_HEARTRATE_BufferCompletedBytesGet function can
-    be called to find out how many bytes were processed.
-
-    The bufferHandle parameter contains the buffer handle of the buffer that
-    associated with the event. And bufferHandle will be valid while the buffer
-    request is in the queue and during callback, unless an error occurred.
-    After callback returns, the driver will retire the buffer handle.
-
-    The context parameter contains the a handle to the client context,
-    provided at the time the event handling function was registered using the
-    DRV_HEARTRATE_BufferEventHandlerSet function.  This context handle value is
-    passed back to the client as the "context" parameter.  It can be any value
-    necessary to identify the client context or instance (such as a pointer to
-    the client's data) instance of the client that made the buffer add request.
-
-    The event handler function executes in the peripheral's interrupt
-    context. It is recommended of the application to not perform process
-    intensive or blocking operations within this function.
-
-    The DRV_HEARTRATE_ReadBufferAdd and DRV_HEARTRATE_WriteBufferAdd functions can
-    be called in the event handler to add a buffer to the driver queue. These
-    functions can only be called to add buffers to the driver whose event
-    handler is running. For example, HEARTRATE2 driver buffers cannot be added in
-    HEARTRATE1 driver event handler.
-*/
-
-typedef void (*DRV_HEARTRATE_BUFFER_EVENT_HANDLER )( DRV_HEARTRATE_BUFFER_EVENT event, DRV_HEARTRATE_BUFFER_HANDLE bufferHandle, uintptr_t context );
-
+typedef void (*DRV_HEARTRATE_APP_CALLBACK )(DRV_HANDLE handle, int heartrate );
 // *****************************************************************************
 // *****************************************************************************
 // Section: HEARTRATE Driver System Interface Routines
@@ -424,7 +226,7 @@ SYS_MODULE_OBJ DRV_HEARTRATE_Initialize( const SYS_MODULE_INDEX index, const SYS
 
 SYS_STATUS DRV_HEARTRATE_Status( SYS_MODULE_OBJ object);
 
-bool DRV_HEARTRATE_Read(DRV_HANDLE handle);
+int DRV_HEARTRATE_Read(DRV_HANDLE handle);
 // *****************************************************************************
 // *****************************************************************************
 // Section: HEARTRATE Driver Common Client Interface Routines
@@ -544,7 +346,9 @@ bool DRV_HEARTRATE_GetHeartrate( const DRV_HANDLE handle, int * heartRate);
 
 void DRV_HEARTRATE_TASKS( SYS_MODULE_OBJ object);
 
-typedef void (*DRV_HEARTRATE_APP_CALLBACK )(DRV_HANDLE handle, uintptr_t context );
+void DRV_HEARTRATE_ClientEventHandlerSet(const DRV_HANDLE handle, const DRV_HEARTRATE_APP_CALLBACK callback);
+
+
 
 
 

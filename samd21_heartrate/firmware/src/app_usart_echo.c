@@ -83,7 +83,7 @@ APP_DATA appHeartRateData;
 #define CLICK_HEARTRATE9_USART_READ_BUFFER_SIZE 128
 #define RECEIVE_BUFFER_SIZE     (CLICK_HEARTRATE9_USART_READ_BUFFER_SIZE * 10)
 APP_HEART_RATE9_DATA app_heartrate_Data;
-
+void APP_HeartRateCallback (DRV_HANDLE handle, int heartrate );
 
 
 /**
@@ -163,9 +163,9 @@ void APP_HEART_RATE9_Tasks ( void )
 
         case APP_STATE_SERVICE_TASKS:
         {
-           //DRV_HEARTRATE_Read(appHeartRateData.drvHeartRatehandle);
-           
-            break;
+          
+           DRV_HEARTRATE_ClientEventHandlerSet(appHeartRateData.drvHeartRatehandle, APP_HeartRateCallback);
+           break;
         }
         case APP_STATE_ERROR:
 
@@ -185,7 +185,13 @@ void APP_HEART_RATE9_Tasks ( void )
     
 }
 
-
+void APP_HeartRateCallback (DRV_HANDLE handle, int heartrate )
+{
+    if(handle == appHeartRateData.drvHeartRatehandle)
+     SYS_CONSOLE_Print(SYS_CONSOLE_INDEX_0, "Received new heartrate %d \r\n", heartrate);
+    else
+        SYS_CONSOLE_Print(SYS_CONSOLE_INDEX_0, "Received new bug!!! %d \r\n", heartrate);
+}
 
 /*******************************************************************************
  End of File
